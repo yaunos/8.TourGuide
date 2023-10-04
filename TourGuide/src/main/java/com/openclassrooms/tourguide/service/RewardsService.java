@@ -1,16 +1,16 @@
 package com.openclassrooms.tourguide.service;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
-import gpsUtil.GpsUtil;
+import com.openclassrooms.tourguide.user.User;
+import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
+import org.springframework.stereotype.Service;
 import rewardCentral.RewardCentral;
-import com.openclassrooms.tourguide.user.User;
-import com.openclassrooms.tourguide.user.UserReward;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class RewardsService {
@@ -20,14 +20,28 @@ public class RewardsService {
     private int defaultProximityBuffer = 10;
 	private int proximityBuffer = defaultProximityBuffer;
 	private int attractionProximityRange = 200;
-	private final GpsUtil gpsUtil;
+	// private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
 	
-	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
-		this.gpsUtil = gpsUtil;
-		this.rewardsCentral = rewardCentral;
-	}
-	
+	//public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
+	//	this.gpsUtil = gpsUtil;
+	//	this.rewardsCentral = rewardCentral;
+	// }
+
+	private GpsUtilService gpsUtilService;
+
+	/**
+	 * Improvement with concurrent threads : multithreading features
+	 * Use of Java ExecutorService to parallelize the tracking of user locations
+	 */
+
+	private ExecutorService executorService = Executors.newFixedThreadPool(1000);
+
+public  RewardsService(RewardCentral rewardCentral, GpsUtilService gpsUtilService) {
+	this.rewardsCentral = rewardCentral;
+	this.gpsUtilService = gpsUtilService;
+}
+
 	public void setProximityBuffer(int proximityBuffer) {
 		this.proximityBuffer = proximityBuffer;
 	}
@@ -35,11 +49,13 @@ public class RewardsService {
 	public void setDefaultProximityBuffer() {
 		proximityBuffer = defaultProximityBuffer;
 	}
-	
+
+	// adding "synchronized" to the method, doesn't change the result of the test
 	public void calculateRewards(User user) {
 		List<VisitedLocation> userLocations = user.getVisitedLocations();
-		List<Attraction> attractions = gpsUtil.getAttractions();
-		
+		// List<Attraction> attractions = gpsUtil.getAttractions();
+		List<Attraction> attractions = gpsUtilService.getAttractions();
+
 		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
 				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
