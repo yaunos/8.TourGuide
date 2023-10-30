@@ -68,12 +68,24 @@ public class User {
 	public void clearVisitedLocations() {
 		visitedLocations.clear();
 	}
-	
+
+
 	public synchronized void addUserReward(UserReward userReward) {
-		if(userRewards.stream().filter(r -> !r.attraction.attractionName.equals(userReward.attraction)).count() == 0) {
+		if(userRewards.stream().filter(r -> r.attraction.attractionName.equals(userReward.attraction)).count() == 0) {
 			userRewards.add(userReward);
 		}
 	}
+
+	/*
+	public void addUserReward(UserReward userReward) {
+		boolean attractionExists = userRewards.stream()
+				.anyMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName));
+
+		if (!attractionExists) {
+			userRewards.add(userReward);
+		}
+	}
+	*/
 	
 	public List<UserReward> getUserRewards() {
 		return userRewards;

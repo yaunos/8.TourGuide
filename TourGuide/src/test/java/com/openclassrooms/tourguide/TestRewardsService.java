@@ -77,11 +77,33 @@ public class TestRewardsService {
 		InternalTestHelper.setInternalUserNumber(1);
 		TourGuideService tourGuideService = new TourGuideService(gpsUtilService, rewardsService);
 
+
 		rewardsService.calculateRewards(tourGuideService.getAllUsers().get(0));
+
 		List<UserReward> userRewards = tourGuideService.getUserRewards(tourGuideService.getAllUsers().get(0));
 		tourGuideService.tracker.stopTracking();
 
 		assertEquals(gpsUtilService.getAttractions().size(), userRewards.size());
+
+
+	/*
+		// Get the user for which you want to find the nearest attractions
+		User user = tourGuideService.getAllUsers().get(0);
+
+		// Calculate rewards for each attraction in parallel
+		List<Attraction> attractions = gpsUtilService.getAttractions();
+		List<UserReward> userRewards = attractions.parallelStream()
+				.map(attraction -> {
+					rewardsService.calculateRewards(user, attraction);
+					return tourGuideService.getUserRewards(user, attraction);
+				})
+				.collect(Collectors.toList());
+
+		tourGuideService.tracker.stopTracking();
+
+		assertEquals(attractions.size(), userRewards.size());
+	 */
+
 	}
 
 }

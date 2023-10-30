@@ -37,7 +37,7 @@ public class RewardsService {
 
 	private ExecutorService executorService = Executors.newFixedThreadPool(1000);
 
-public  RewardsService(RewardCentral rewardCentral, GpsUtilService gpsUtilService) {
+	public RewardsService(RewardCentral rewardCentral, GpsUtilService gpsUtilService) {
 	this.rewardsCentral = rewardCentral;
 	this.gpsUtilService = gpsUtilService;
 }
@@ -58,8 +58,19 @@ public  RewardsService(RewardCentral rewardCentral, GpsUtilService gpsUtilServic
 
 		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
-				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-					if(nearAttraction(visitedLocation, attraction)) {
+				// if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
+				//	if(nearAttraction(visitedLocation, attraction)) {
+				//		user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+				//	}
+				// }
+
+				// Synchronize the above section to avoid concurrent modification
+				synchronized (user.getUserRewards()) {
+					boolean attractionAlreadyReceived = user.getUserRewards()
+							.stream()
+							.anyMatch(r -> r.attraction.attractionName.equals(attraction.attractionName));
+
+					if (!attractionAlreadyReceived && nearAttraction(visitedLocation, attraction)) {
 						user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
 					}
 				}
@@ -71,7 +82,7 @@ public  RewardsService(RewardCentral rewardCentral, GpsUtilService gpsUtilServic
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
 	}
 	
-	private boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
+	private synchronized boolean nearAttraction(VisitedLocation visitedLocation, Attraction attraction) {
 		return getDistance(attraction, visitedLocation.location) > proximityBuffer ? false : true;
 	}
 	
