@@ -1,5 +1,7 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.domain.NearbyAttractionListDTO;
+import com.openclassrooms.tourguide.domain.NearbyAttractionDTO;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
@@ -16,7 +18,6 @@ import tripPricer.TripPricer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -101,16 +102,18 @@ public VisitedLocation trackUserLocation(User user) throws ExecutionException, I
 		Map<Attraction, Double > map = new HashMap<>();
 
 		for (Attraction attraction : gpsUtilService.getAttractions()) {
-
-		/*	if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
+		/*
+			if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
 				nearbyAttractions.add(attraction);
 			}
 		}
-		 */
+		*/
+
+
 			map.put(attraction, rewardsService.getDistance(attraction, visitedLocation.location));
 		}
 		Map<Attraction, Double> mapSortedByDistance = map.entrySet().stream()
-				.sorted(Entry.comparingByValue())
+				.sorted(Map.Entry.comparingByValue())
 				.collect(Collectors.toMap(Entry::getKey, Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
 		mapSortedByDistance.forEach((k,v)->{
@@ -120,6 +123,37 @@ public VisitedLocation trackUserLocation(User user) throws ExecutionException, I
 		});
 
 		return nearbyAttractions;
+	}
+
+	/**
+	 * As requested in the TODO in the TourGuideController
+	 *
+	 * @param userName
+	 * @return attractionName, attractionPosition, DistanceFromUser, RewardsPoints
+	 * @throws ExecutionException
+	 * @throws InterruptedException
+	 */
+
+	public NearbyAttractionListDTO getNearByAttractionsWithInfos (String userName) throws ExecutionException, InterruptedException {
+
+		NearbyAttractionListDTO nearbyAttractionsListDTO = new NearbyAttractionListDTO();
+
+		VisitedLocation visitedLocation = getUserLocation(getUser(userName));
+		nearbyAttractionsListDTO.setUserLocation(visitedLocation);
+
+		List<NearbyAttractionDTO> listAttractionsDTO  =  new ArrayList();
+		List<Attraction> listAttractions = getNearByAttractions(visitedLocation);
+		listAttractions.forEach(attraction -> {
+			NearbyAttractionDTO attractionToAdd = new NearbyAttractionDTO();
+			attractionToAdd.setAttractionName(attraction.attractionName);
+			attractionToAdd.setAttractionPosition(new Location(attraction.latitude,attraction.longitude));
+			attractionToAdd.setDistanceFromUser(rewardsService.getDistance(attraction, visitedLocation.location));
+			// attractionToAdd.setRewardPoints(rewardCentral.getAttractionRewardPoints(attraction.attractionId, getUser(userName).getUserId()));
+			listAttractionsDTO.add(attractionToAdd);
+		});
+		nearbyAttractionsListDTO.setAttractions(listAttractionsDTO);
+
+		return nearbyAttractionsListDTO;
 	}
 
 	private void addShutDownHook() {

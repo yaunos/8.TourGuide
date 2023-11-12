@@ -8,7 +8,10 @@ import gpsUtil.location.VisitedLocation;
 import org.springframework.stereotype.Service;
 import rewardCentral.RewardCentral;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,27 +53,39 @@ public class RewardsService {
 		proximityBuffer = defaultProximityBuffer;
 	}
 
+	private ConcurrentHashMap<User, List<UserReward>> userRewardsMap = new ConcurrentHashMap<>();
+
 	// adding "synchronized" to the method, doesn't change the result of the test
-	public void calculateRewards(User user) {
+	public synchronized void calculateRewards(User user) {
 		List<VisitedLocation> userLocations = user.getVisitedLocations();
 		// List<Attraction> attractions = gpsUtil.getAttractions();
 		List<Attraction> attractions = gpsUtilService.getAttractions();
 
-		for(VisitedLocation visitedLocation : userLocations) {
+		// Create a copy of the userRewards list to avoid concurrent modification on the original list
+		List<UserReward> userRewardsCopy = new ArrayList<>(user.getUserRewards());
+
+		List<UserReward> userRewards = userRewardsMap.getOrDefault(user, new CopyOnWriteArrayList<>());
+
+		for (VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
-				// if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-				//	if(nearAttraction(visitedLocation, attraction)) {
-				//		user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
-				//	}
-				// }
 
 				// Synchronize the above section to avoid concurrent modification
-				synchronized (user.getUserRewards()) {
-					boolean attractionAlreadyReceived = user.getUserRewards()
-							.stream()
-							.anyMatch(r -> r.attraction.attractionName.equals(attraction.attractionName));
+				// synchronized (user.getUserRewards()) {
+				//	boolean attractionAlreadyReceived = user.getUserRewards()
+				//			.stream()
+				//			.anyMatch(r -> r.attraction.attractionName.equals(attraction.attractionName));
 
-					if (!attractionAlreadyReceived && nearAttraction(visitedLocation, attraction)) {
+				// /**
+				// * Still getting errors (but less frequently while playing test) on nearAllAttractions() with the above commented solution
+				// */
+				// boolean attractionAlreadyReceived = userRewards
+				boolean attractionAlreadyReceived = userRewardsCopy
+					.stream()
+					.anyMatch(r -> r.attraction.attractionName.equals(attraction.attractionName));
+
+
+				if (!attractionAlreadyReceived && nearAttraction(visitedLocation, attraction)) {
+					synchronized (user.getUserRewards()) {
 						user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
 					}
 				}

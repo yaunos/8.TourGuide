@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.controller;
 
+import com.openclassrooms.tourguide.domain.NearbyAttractionListDTO;
 import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
@@ -46,6 +47,21 @@ public class TourGuideController {
     public List<Attraction> getNearbyAttractions(@RequestParam String userName) throws ExecutionException, InterruptedException{
     	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
     	return tourGuideService.getNearByAttractions(visitedLocation);
+        // return JsonStream.serialize(visitedLocation.location);
+    }
+
+    /**
+     * DOING: modifying the previous method to return more informations
+     * @param userName
+     * @return
+     */
+
+    @RequestMapping("/getNearbyAttractionsWithAllRequestedInfos")
+    // public String getNearbyAttractionsRequestedInfos(@RequestParam String userName) throws ExecutionException, InterruptedException {
+    public NearbyAttractionListDTO getNearbyAttractionsRequestedInfos(@RequestParam String userName) throws ExecutionException, InterruptedException {
+        VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
+        // return JsonStream.serialize(tourGuideService.getNearByAttractionsWithInfos(visitedLocation));
+        return tourGuideService.getNearByAttractionsWithInfos(userName);
     }
     
     @RequestMapping("/getRewards") 

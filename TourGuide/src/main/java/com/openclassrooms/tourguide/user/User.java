@@ -69,23 +69,44 @@ public class User {
 		visitedLocations.clear();
 	}
 
+/**
+ *  Getting an error on the number of rewards while testing
 
 	public synchronized void addUserReward(UserReward userReward) {
 		if(userRewards.stream().filter(r -> r.attraction.attractionName.equals(userReward.attraction)).count() == 0) {
 			userRewards.add(userReward);
+
 		}
 	}
 
-	/*
-	public void addUserReward(UserReward userReward) {
+ */
+
+/**
+ *  Still getting concurrent modifications sometimes while testing
+ */
+	public synchronized void addUserReward(UserReward userReward) {
 		boolean attractionExists = userRewards.stream()
 				.anyMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName));
 
+		// We check if the attraction exist already to avoid duplicates based on the attraction's name:
 		if (!attractionExists) {
 			userRewards.add(userReward);
 		}
 	}
-	*/
+
+
+/*
+public synchronized void addUserReward(UserReward userReward) {
+	List<UserReward> rewardsToAdd = new ArrayList<>();
+
+	if (userRewards.stream().noneMatch(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName))) {
+		rewardsToAdd.add(userReward);
+	}
+
+	userRewards.addAll(rewardsToAdd);
+}
+ */
+
 	
 	public List<UserReward> getUserRewards() {
 		return userRewards;
