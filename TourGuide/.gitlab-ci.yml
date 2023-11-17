@@ -1,12 +1,15 @@
-stages :
-  -build
+stages:
+  - build
 
 variables:
-  MAVEN_CLI_OPS: "-s .m2/settings.xml --batch-mode"
+  MAVEN_CLI_OPTS: "-s $CI_PROJECT_DIR/.m2/settings.xml --batch-mode"
 
 maven_build:
   stage: build
+  image: maven:3.8-jdk-11
   script:
+    - mkdir -p $HOME/.m2  # Créez le répertoire .m2 s'il n'existe pas
+    - cp $CI_PROJECT_DIR/.m2/settings.xml $HOME/.m2/settings.xml
     - mvn $MAVEN_CLI_OPTS clean install
   artifacts:
     paths:
